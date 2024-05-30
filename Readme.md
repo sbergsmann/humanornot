@@ -21,7 +21,9 @@ Deadline 4. June 2024
 - Basic chat mechanism (UC1, UC2, SUC1)
 - AI callback method (SUC2)
 - AI Endpoint check (SUC5)
+
 Temporary:
 - "Back to Start Screen Button" for debugging purposes
+
 Optional:
 - Implement collecting and storing of chat messages

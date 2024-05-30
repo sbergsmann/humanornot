@@ -13,3 +13,15 @@ poetry config virtualenvs.in-project true
 ```
 
 - run `poetry install` in the cloned folder
+
+# Workflow
+
+## Sprint 1
+Deadline 4. June 2024
+- Basic chat mechanism (UC1, UC2, SUC1)
+- AI callback method (SUC2)
+- AI Endpoint check (SUC5)
+Temporary:
+- "Back to Start Screen Button" for debugging purposes
+Optional:
+- Implement collecting and storing of chat messages

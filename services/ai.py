@@ -1,10 +1,21 @@
-from openai import AsyncClient
+import json
+import os
+import sys
 
-from services.chat import AIChatResponse, Chat
+import instructor
+module_path = os.path.abspath(os.path.join('..'))
+if module_path not in sys.path:
+    sys.path.append(module_path)
+
+from typing import Any, Dict
+from openai import AsyncOpenAI
+from openai.types.chat.chat_completion import ChatCompletion
+
+from models.chat import AIChatResponse, Chat
 
 
 async def perform_openai_request(
-    client: AsyncClient,
+    client: AsyncOpenAI,
     chat: Chat
 ) -> AIChatResponse:
     """"""
@@ -21,7 +32,7 @@ async def perform_openai_request(
                 "content": chat.format()
             }      
         ],
-        temperature=.0,
+        temperature=.1,
         response_model=AIChatResponse  
     )
     return response

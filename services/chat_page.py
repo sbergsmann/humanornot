@@ -137,6 +137,13 @@ def chat_page(page: ft.Page, room_id: str):
                 ),
             ]
         ),
+        ft.Row(
+            [
+                ft.ElevatedButton(text="Vote AI", on_click=lambda e: None, height=50, width=150),
+                ft.ElevatedButton(text="Vote Human", on_click=lambda e: None, height=50, width=150)
+            ],
+            alignment=ft.MainAxisAlignment.CENTER
+        ),
         ft.ElevatedButton(text="Return to Start", on_click=return_to_start_click)  # Add button to return to start
     )
 

@@ -27,3 +27,10 @@ Temporary:
 
 Optional:
 - Implement collecting and storing of chat messages
+
+## Sprint 2
+Deadline 11. June 2024
+- Prompt Engineering for AI
+- Waiting List for Users
+- Show System Message when Claim was made
+- Store current Claim Situation in the Chat model

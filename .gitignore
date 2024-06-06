@@ -2,4 +2,5 @@
 .env
 /dev
 /data
+/services/data
 __pycache__

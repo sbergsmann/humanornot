@@ -119,7 +119,8 @@ class EndpointFactory:
             self.logger.exception(f"Unexpected error: {e}")
             return False
         
-        try:        
+        try:
+            # make the instructor check
             wrapped_client: AsyncOpenAI = instructor.patch(
                 client, mode=instructor.Mode.JSON
             )
@@ -223,6 +224,7 @@ class EndpointFactory:
 
 if __name__ == "__main__":
     import asyncio
+    load_dotenv()
     
     # Configure logging
     logging.basicConfig(

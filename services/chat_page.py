@@ -1,9 +1,11 @@
 import flet as ft
 from collections import deque, defaultdict
+import uuid
 
 # Define a message class to send messages between users
 class Message:
-    def __init__(self, user_name: str, text: str, message_type: str, room_id: str = None):
+    def __init__(self, user_id: str, user_name: str, text: str, message_type: str, room_id: str = None):
+        self.user_id = user_id
         self.user_name = user_name
         self.text = text
         self.message_type = message_type
@@ -73,8 +75,9 @@ def chat_page(page: ft.Page, room_id: str):
         if new_message.value != "":
             page.pubsub.send_all(
                 Message(
-                    page.session.get("user_name"),
-                    new_message.value,
+                    user_id=page.session.get("user_id"),
+                    user_name=page.session.get("user_name"),
+                    text=new_message.value,
                     message_type="chat_message",
                     room_id=room_id
                 )
@@ -97,6 +100,8 @@ def chat_page(page: ft.Page, room_id: str):
 
     # Function to return to the start page
     def return_to_start_click(e):
+        # Erase the user_name when returning to the start page
+        page.session.remove("user_name")
         page.go("/")
 
     # Chat messages
@@ -174,18 +179,19 @@ def start_page(page: ft.Page):
                 rooms[assigned_room] = []
             # Add the user to the room
             rooms[assigned_room].append(user_name)
-            online_users.add(user_name)
+            user_id = page.session.get("user_id")  # Retrieve the user_id from the session
             page.session.set("user_name", user_name)
             page.session.set("room_id", assigned_room)
             page.pubsub.send_all(
                 Message(
+                    user_id=user_id,
                     user_name=user_name,
                     text=f"{user_name} has joined the chat.",
                     message_type="login_message",
                     room_id=assigned_room
                 )
             )
-            page.go(f"/chat/{assigned_room}") # Redirect to the chat page
+            page.go(f"/chat/{assigned_room}")  # Redirect to the chat page
 
     # User name entry field
     join_user_name = ft.TextField(
@@ -213,15 +219,21 @@ def start_page(page: ft.Page):
 def main(page: ft.Page):
     def route_change(e):
         page.controls.clear()  # Clear the current page content
-        user_name = page.session.get("user_name") or f"Anonymous_{id(page)}"
-        # Add the user to the online users list
-        if user_name not in online_users:  # Ensure the user is not already in the set
-            online_users.add(user_name)
-            page.session.set("user_name", user_name)  # Ensure user name is set in the session
-            print(f"User {user_name} connected")
+        user_id = page.session.get("user_id")
+        if user_id is None:
+            user_id = str(uuid.uuid4())  # Generate a unique user_id
+            page.session.set("user_id", user_id)
+
+        # Add the user_id to the online users set if not already added
+        if user_id not in online_users:
+            online_users.add(user_id)
+            print(f"User {user_id} connected")
+            print(online_users)
+
         page.pubsub.send_all(
             Message(
-                user_name=user_name,
+                user_id=user_id,
+                user_name="",  # User name not needed for online user count
                 text="",
                 message_type="update_online_users",
                 room_id=None
@@ -238,19 +250,22 @@ def main(page: ft.Page):
 
     # Handle user disconnection
     def on_disconnect(e):
-        user_name = page.session.get("user_name")
-        # Remove the user from the online users list
-        if user_name and user_name in online_users:
-            online_users.remove(user_name)
+        user_id = page.session.get("user_id")
+        # Remove the user_id from the online users list
+        if user_id and user_id in online_users:
+            online_users.remove(user_id)
             page.pubsub.send_all(
                 Message(
-                    user_name=user_name,
+                    user_id=user_id,
+                    user_name="",  # User name not needed for online user count
                     text="",
                     message_type="update_online_users",
                     room_id=None
                 )
             )  # Trigger update
-            print(f"User {user_name} disconnected")  # Add debug statement
+            print(f"User {user_id} disconnected")  # Add debug statement
+            print(online_users)
+        page.update()
 
     page.on_route_change = route_change
     page.on_disconnect = on_disconnect

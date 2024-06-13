@@ -14,6 +14,12 @@ poetry config virtualenvs.in-project true
 
 - run `poetry install` in the cloned folder
 
+## Running the Chat Interface
+
+```shell
+flet run --web services/chat_page.py
+```
+
 # Workflow
 
 ## Sprint 1

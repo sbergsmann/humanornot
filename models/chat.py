@@ -14,7 +14,7 @@ class ChatMessage(BaseModel):
 
 class AIChatResponse(BaseModel):
     message: str = Field(description="A text message to respond with based on the previous conversation")
-    is_response_required: bool = Field(description="'True' if a message must be returned")
+    is_response_required: bool = Field(description="Only 'True' if the context requires to return the message.")
 
 
 class Chat(BaseModel):

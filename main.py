@@ -1,6 +1,7 @@
 import flet as ft
 from collections import deque, defaultdict
 import uuid
+from services.timer import Timer
 
 # Define a message class to send messages between users
 class Message:
@@ -93,8 +94,28 @@ def chat_page(page: ft.Page, room_id: str):
                 m = ChatMessage(message)
             elif message.message_type == "login_message":
                 m = ft.Text(message.text, italic=True, color=ft.colors.BLACK45, size=12)
+            elif message.message_type == "ai_claim_message":
+                m = ft.Text(message.text, italic=True, color=ft.colors.RED, size=12)
+                timer.visible = True
+                timer.start()
             chat.controls.append(m)
             page.update()
+
+    def on_ai_claim(e):
+        page.pubsub.send_all(
+            Message(
+                user_id=page.session.get("user_id"),
+                user_name=page.session.get("user_name"),
+                text=f"{page.session.get('user_name')} raised the claim AI",
+                message_type="ai_claim_message",
+                room_id=room_id
+            )
+        )
+        page.update()
+
+    def on_human_claim(e):
+        # TODO end the game
+        pass
 
     page.pubsub.subscribe(on_message)
 
@@ -110,6 +131,8 @@ def chat_page(page: ft.Page, room_id: str):
         spacing=10,
         auto_scroll=True,
     )
+    timer = Timer(name="timer", duration=10)
+    timer.visible = False
 
     # New message entry form
     new_message = ft.TextField(
@@ -134,6 +157,12 @@ def chat_page(page: ft.Page, room_id: str):
         ),
         ft.Row(
             [
+                timer
+            ],
+            alignment=ft.MainAxisAlignment.CENTER
+        ),
+        ft.Row(
+            [
                 new_message,
                 ft.IconButton(
                     icon=ft.icons.SEND_ROUNDED,
@@ -144,8 +173,8 @@ def chat_page(page: ft.Page, room_id: str):
         ),
         ft.Row(
             [
-                ft.ElevatedButton(text="Vote AI", on_click=lambda e: None, height=50, width=150),
-                ft.ElevatedButton(text="Vote Human", on_click=lambda e: None, height=50, width=150)
+                ft.ElevatedButton(text="Vote AI", on_click=on_ai_claim, height=50, width=150),
+                ft.ElevatedButton(text="Vote Human", on_click=on_human_claim, height=50, width=150)
             ],
             alignment=ft.MainAxisAlignment.CENTER
         ),
@@ -283,4 +312,4 @@ def main(page: ft.Page):
     page.pubsub.subscribe(on_message)
     page.go(page.route)
 
-ft.app(target=main)
+ft.app(target=main, view=ft.AppView.WEB_BROWSER)

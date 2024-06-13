@@ -152,46 +152,48 @@ def chat_page(page: ft.Page, room_id: str):
         ft.ElevatedButton(text="Return to Start", on_click=return_to_start_click)  # Add button to return to start
     )
 
-# Start page to join the chat
 def start_page(page: ft.Page):
-
     def join_chat_click(e):
         # User name is required to join the chat
         if not join_user_name.value:
             join_user_name.error_text = "Name cannot be blank!"
             join_user_name.update()
-        # At least 2 users must be online to start a chat
-        elif len(online_users) < 2:
-            join_user_name.error_text = "At least 2 users must be online to start a chat."
-            join_user_name.update()
-        # Join the chat
         else:
             user_name = join_user_name.value
-            assigned_room = None
-            # Assign the user to a room with less than 2 users
-            for room_id, users in rooms.items():
-                if len(users) < 2:
-                    assigned_room = room_id
-                    break
-            # If no room is available, create a new room
-            if assigned_room is None:
-                assigned_room = str(len(rooms) + 1)
-                rooms[assigned_room] = []
-            # Add the user to the room
-            rooms[assigned_room].append(user_name)
-            user_id = page.session.get("user_id")  # Retrieve the user_id from the session
+            user_id = page.session.get("user_id")
+            # Add user to waiting list
+            waiting_list.append((user_id, user_name))
             page.session.set("user_name", user_name)
-            page.session.set("room_id", assigned_room)
-            page.pubsub.send_all(
-                Message(
-                    user_id=user_id,
-                    user_name=user_name,
-                    text=f"{user_name} has joined the chat.",
-                    message_type="login_message",
-                    room_id=assigned_room
+            page.session.set("user_id", user_id)
+            join_chat_button.text = "Loading..."
+            join_chat_button.disabled = True
+            join_chat_button.update()
+            # Check and pair users
+            if len(waiting_list) >= 2:
+                user1_id, user1_name = waiting_list.popleft()
+                user2_id, user2_name = waiting_list.popleft()
+                room_id = str(len(rooms) + 1)
+                rooms[room_id] = [user1_name, user2_name]
+                page.session.set("room_id", room_id)
+                # Notify both users to join the chat room
+                page.pubsub.send_all(
+                    Message(
+                        user_id=user1_id,
+                        user_name=user1_name,
+                        text=f"{user1_name} and {user2_name}, you have been paired.",
+                        message_type="join_chat",
+                        room_id=room_id
+                    )
                 )
-            )
-            page.go(f"/chat/{assigned_room}")  # Redirect to the chat page
+                page.pubsub.send_all(
+                    Message(
+                        user_id=user2_id,
+                        user_name=user2_name,
+                        text=f"{user1_name} and {user2_name}, you have been paired.",
+                        message_type="join_chat",
+                        room_id=room_id
+                    )
+                )
 
     # User name entry field
     join_user_name = ft.TextField(
@@ -202,13 +204,16 @@ def start_page(page: ft.Page):
     # Display the number of users online
     page.users_online_text = ft.Text(f"{len(online_users)} users online", size=16, weight="bold")
 
+    # Start chat button with loading functionality
+    join_chat_button = ft.ElevatedButton(text="Start Chat", on_click=join_chat_click)
+
     # Add everything to the start page
     page.add(
         ft.Column(
             [
                 ft.Text("Welcome to HumanOrNot!", size=20, weight="bold"),
                 join_user_name,
-                ft.ElevatedButton(text="Start Chat", on_click=join_chat_click),
+                join_chat_button,
                 page.users_online_text
             ],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -267,9 +272,15 @@ def main(page: ft.Page):
             print(online_users)
         page.update()
 
+    def on_message(message: Message):
+        if message.message_type == "join_chat":
+            if page.session.get("user_id") in [message.user_id, message.user_id]:
+                page.go(f"/chat/{message.room_id}")
+
     page.on_route_change = route_change
     page.on_disconnect = on_disconnect
     page.pubsub.subscribe(lambda msg: update_online_users(page))
+    page.pubsub.subscribe(on_message)
     page.go(page.route)
 
 ft.app(target=main)

@@ -5,12 +5,19 @@ from services.timer import Timer
 
 # Define a message class to send messages between users
 class Message:
-    def __init__(self, user_id: str, user_name: str, text: str, message_type: str, room_id: str = None):
+    def __init__(self, 
+                 user_id: str, 
+                 user_name: str, 
+                 text: str, 
+                 message_type: str, 
+                 room_id: str = None,
+                 user_count: int = None):
         self.user_id = user_id
         self.user_name = user_name
         self.text = text
         self.message_type = message_type
         self.room_id = room_id
+        self.user_count = user_count # to display the number of users online
 
 # Define a chat message class to display messages in the chat
 class ChatMessage(ft.Row):
@@ -100,6 +107,9 @@ def chat_page(page: ft.Page, room_id: str):
                 timer.start()
             chat.controls.append(m)
             page.update()
+        elif message.message_type == "update_online_users":
+            page.users_online_text.value = f"{message.user_count} users online"
+            page.users_online_text.update()
 
     def on_ai_claim(e):
         page.pubsub.send_all(
@@ -270,7 +280,8 @@ def main(page: ft.Page):
                 user_name="",  # User name not needed for online user count
                 text="",
                 message_type="update_online_users",
-                room_id=None
+                room_id=None,
+                user_count=len(online_users)
             )
         )  # Trigger update
 
@@ -294,7 +305,8 @@ def main(page: ft.Page):
                     user_name="",  # User name not needed for online user count
                     text="",
                     message_type="update_online_users",
-                    room_id=None
+                    room_id=None,
+                    user_count=len(online_users)
                 )
             )  # Trigger update
             print(f"User {user_id} disconnected")  # Add debug statement
@@ -305,10 +317,12 @@ def main(page: ft.Page):
         if message.message_type == "join_chat":
             if page.session.get("user_id") in [message.user_id, message.user_id]:
                 page.go(f"/chat/{message.room_id}")
+        elif message.message_type == "update_online_users":
+            page.users_online_text.value = f"{message.user_count} users online"
+            page.users_online_text.update()
 
     page.on_route_change = route_change
     page.on_disconnect = on_disconnect
-    page.pubsub.subscribe(lambda msg: update_online_users(page))
     page.pubsub.subscribe(on_message)
     page.go(page.route)
 

@@ -209,6 +209,7 @@ def start_page(page: ft.Page):
             join_chat_button.update()
             # Check and pair users
             if len(waiting_list) >= 2:
+                # add assign_user function below
                 user1_id, user1_name = waiting_list.popleft()
                 user2_id, user2_name = waiting_list.popleft()
                 room_id = str(len(rooms) + 1)

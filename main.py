@@ -70,7 +70,7 @@ waiting_list = deque()
 online_users = set()  # To track online users
 
 def update_online_users(page):
-    if hasattr(page, 'users_online_text') and page.users_online_text in page.controls:
+    if hasattr(page, 'users_online_text') and page.route == "/":
         page.users_online_text.value = f"{len(online_users)} users online"
         page.users_online_text.update()
 
@@ -107,9 +107,6 @@ def chat_page(page: ft.Page, room_id: str):
                 timer.start()
             chat.controls.append(m)
             page.update()
-        elif message.message_type == "update_online_users":
-            page.users_online_text.value = f"{message.user_count} users online"
-            page.users_online_text.update()
 
     def on_ai_claim(e):
         page.pubsub.send_all(
@@ -319,8 +316,7 @@ def main(page: ft.Page):
             if page.session.get("user_id") in [message.user_id, message.user_id]:
                 page.go(f"/chat/{message.room_id}")
         elif message.message_type == "update_online_users":
-            page.users_online_text.value = f"{message.user_count} users online"
-            page.users_online_text.update()
+            update_online_users(page)
 
     page.on_route_change = route_change
     page.on_disconnect = on_disconnect

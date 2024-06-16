@@ -1,5 +1,3 @@
-# Change the code together with Severin after merging all branches to avoid to 
-# too many conflicts at once.
 import random
 
 def assign_user(page, Message, rooms, waiting_list):
@@ -10,8 +8,7 @@ def assign_user(page, Message, rooms, waiting_list):
         # assign to AI
         user_id, user_name = waiting_list.popleft()
         room_id = str(len(rooms)+1)
-        rooms[room_id]['users'].append(user_name)
-        rooms[room_id]['has_ai'] = True
+        rooms[room_id] = {"users": [user_name], "has_ai": True}
         # notify the user they are paired to a room
         page.pubsub.send_all(
             Message(
@@ -27,8 +24,7 @@ def assign_user(page, Message, rooms, waiting_list):
         user1_id, user1_name = waiting_list.popleft()
         user2_id, user2_name = waiting_list.popleft()
         room_id = str(len(rooms)+1)
-        rooms[room_id]['users'].append([user1_name, user2_name])
-        rooms[room_id]['has_ai'] = False
+        rooms[room_id] = {"users": [user1_name, user2_name], "has_ai": False}
         # notify the users that they have been assigned to a room
         page.pubsub.send_all(
             Message(

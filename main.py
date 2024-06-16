@@ -2,6 +2,7 @@ import flet as ft
 from collections import deque, defaultdict
 import uuid
 from services.timer import Timer
+from services.assignuser import assign_user
 
 # Define a message class to send messages between users
 class Message:
@@ -65,7 +66,7 @@ class ChatMessage(ft.Row):
         return colors_lookup[hash(user_name) % len(colors_lookup)]
 
 # Track rooms and waiting list
-rooms = defaultdict(list)
+rooms = defaultdict(lambda: {'users': [], 'has_ai': False})
 waiting_list = deque()
 online_users = set()  # To track online users
 
@@ -90,6 +91,20 @@ def chat_page(page: ft.Page, room_id: str):
                     room_id=room_id
                 )
             )
+
+            if rooms[room_id]['has_ai']:
+                # TODO: replace with AI response logic
+                ai_response = "I am not an AI"
+                page.pubsub.send_all(
+                    Message(
+                        user_id=page.session.get('user_id'),
+                        user_name="AI",
+                        text=ai_response,
+                        message_type="chat_message",
+                        room_id=room_id
+                    )
+                )
+
             # Clear the message field and focus on it
             new_message.value = ""
             new_message.focus()
@@ -207,30 +222,31 @@ def start_page(page: ft.Page):
             # Check and pair users
             if len(waiting_list) >= 2:
                 # add assign_user function below
-                user1_id, user1_name = waiting_list.popleft()
-                user2_id, user2_name = waiting_list.popleft()
-                room_id = str(len(rooms) + 1)
-                rooms[room_id] = [user1_name, user2_name]
-                page.session.set("room_id", room_id)
-                # Notify both users to join the chat room
-                page.pubsub.send_all(
-                    Message(
-                        user_id=user1_id,
-                        user_name=user1_name,
-                        text=f"{user1_name} and {user2_name}, you have been paired.",
-                        message_type="join_chat",
-                        room_id=room_id
-                    )
-                )
-                page.pubsub.send_all(
-                    Message(
-                        user_id=user2_id,
-                        user_name=user2_name,
-                        text=f"{user1_name} and {user2_name}, you have been paired.",
-                        message_type="join_chat",
-                        room_id=room_id
-                    )
-                )
+                assign_user(page, Message, rooms, waiting_list)
+                # user1_id, user1_name = waiting_list.popleft()
+                # user2_id, user2_name = waiting_list.popleft()
+                # room_id = str(len(rooms) + 1)
+                # rooms[room_id] = [user1_name, user2_name]
+                # page.session.set("room_id", room_id)
+                # # Notify both users to join the chat room
+                # page.pubsub.send_all(
+                #     Message(
+                #         user_id=user1_id,
+                #         user_name=user1_name,
+                #         text=f"{user1_name} and {user2_name}, you have been paired.",
+                #         message_type="join_chat",
+                #         room_id=room_id
+                #     )
+                # )
+                # page.pubsub.send_all(
+                #     Message(
+                #         user_id=user2_id,
+                #         user_name=user2_name,
+                #         text=f"{user1_name} and {user2_name}, you have been paired.",
+                #         message_type="join_chat",
+                #         room_id=room_id
+                #     )
+                # )
 
     # User name entry field
     join_user_name = ft.TextField(

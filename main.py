@@ -160,10 +160,10 @@ def chat_page(page: ft.Page, room_id: str):
     # Function to return to the start page
     def return_to_start_click(e=None):
         # Erase the user_name when returning to the start page
-        try:
-            page.session.remove("user_id")
-        except KeyError as e:
-            pass
+        # try:
+        #     page.session.remove("user_id")
+        # except KeyError as e:
+        #     pass
         page.go("/")
 
     # Chat messages
@@ -255,6 +255,8 @@ def chat_page(page: ft.Page, room_id: str):
     claims_visible_timer.start()
 
 def start_page(page: ft.Page):
+    page.title = "HumanOrNot"
+
     def join_chat_click(e):
         # User name is required to join the chat
         if not join_user_name.value:
@@ -311,6 +313,14 @@ def start_page(page: ft.Page):
 
     # Start chat button with loading functionality
     join_chat_button = ft.ElevatedButton(text="Start Chat", on_click=join_chat_click)
+    
+    def on_message(message: Message):
+        if message.message_type == "join_chat":
+            if page.session.get("user_id") in [message.user_id, message.user_id]:
+                page.go(f"/chat/{message.room_id}")
+        elif message.message_type == "update_online_users":
+            update_online_users(page)
+    page.pubsub.subscribe(on_message)
 
     # Add everything to the start page
     page.add(
@@ -338,7 +348,6 @@ def main(page: ft.Page):
         if user_id not in online_users:
             online_users.add(user_id)
             print(f"User {user_id} connected")
-        print(online_users)
 
         page.pubsub.send_all(
             Message(
@@ -350,9 +359,11 @@ def main(page: ft.Page):
                 user_count=len(online_users)
             )
         )  # Trigger update
+        print(online_users)
 
         # Route handling
         if e.route.startswith("/chat/"):
+            print("ENTERED ROUTE CHANGE CHAT PAGE")
             room_id = e.route.split("/chat/")[1]
             chat_page(page, room_id)
         else:
@@ -376,20 +387,12 @@ def main(page: ft.Page):
                 )
             )  # Trigger update
             print(f"User {user_id} disconnected")  # Add debug statement
-            print(online_users)
+            # print(online_users)
         page.update()
-
-    def on_message(message: Message):
-        if message.message_type == "join_chat":
-            if page.session.get("user_id") in [message.user_id, message.user_id]:
-                page.go(f"/chat/{message.room_id}")
-        elif message.message_type == "update_online_users":
-            update_online_users(page)
 
     page.on_route_change = route_change
     page.on_disconnect = on_disconnect
-    page.pubsub.subscribe(on_message)
-    page.pubsub.subscribe(lambda msg: update_online_users(page))
+    # page.pubsub.subscribe(lambda msg: update_online_users(page))
     page.go(page.route)
 
 ft.app(target=main, view=ft.AppView.WEB_BROWSER)

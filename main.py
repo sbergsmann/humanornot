@@ -69,6 +69,9 @@ class ChatMessage(ft.Row):
 rooms = defaultdict(lambda: {'users': [], 'has_ai': False})
 waiting_list = deque()
 online_users = set()  # To track online users
+user_id_to_name = {}
+chat_sessions = defaultdict(lambda: {'messages': []})
+chat_end_flags = defaultdict(bool)
 
 def update_online_users(page):
     if hasattr(page, 'users_online_text') and page.route == "/":
@@ -222,7 +225,7 @@ def start_page(page: ft.Page):
             # Check and pair users
             if len(waiting_list) >= 2:
                 # add assign_user function below
-                assign_user(page, Message, rooms, waiting_list)
+                assign_user(page, Message, rooms, waiting_list, user_id_to_name)
                 # user1_id, user1_name = waiting_list.popleft()
                 # user2_id, user2_name = waiting_list.popleft()
                 # room_id = str(len(rooms) + 1)

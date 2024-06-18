@@ -161,7 +161,7 @@ def chat_page(page: ft.Page, room_id: str):
     def return_to_start_click(e=None):
         # Erase the user_name when returning to the start page
         try:
-            page.session.remove("user_name")
+            page.session.remove("user_id")
         except KeyError as e:
             pass
         page.go("/")

@@ -389,6 +389,7 @@ def main(page: ft.Page):
     page.on_route_change = route_change
     page.on_disconnect = on_disconnect
     page.pubsub.subscribe(on_message)
+    page.pubsub.subscribe(lambda msg: update_online_users(page))
     page.go(page.route)
 
 ft.app(target=main, view=ft.AppView.WEB_BROWSER)

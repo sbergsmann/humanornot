@@ -1,6 +1,17 @@
+import datetime
+import random
+from threading import Thread
+import threading
+import time
 import flet as ft
 from collections import deque, defaultdict
 import uuid
+
+import instructor
+from openai import AsyncClient
+from models.chat import AIChatResponse, Chat, AIChatMessage
+from services.ai import perform_openai_request
+from services.prompt import generate_system_prompt
 from services.timer import Timer
 from services.assignuser import assign_user
 
@@ -78,9 +89,25 @@ def update_online_users(page):
         page.users_online_text.value = f"{len(online_users)} users online"
         page.users_online_text.update()
 
+ai_thread = None
 def chat_page(page: ft.Page, room_id: str):
+    global ai_thread
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
     page.title = f"HumanOrNot Chat - Room {room_id}"
+
+    sys_prompt, ai_name = generate_system_prompt()
+    ai_context: Chat = Chat(
+        id=uuid.uuid4(),
+        created_at=datetime.datetime.now(),
+        system_prompt=sys_prompt,
+        messages=[]
+    )
+    if rooms[room_id]['has_ai']:
+        oai_client: AsyncClient = instructor.patch(
+            AsyncClient(),
+            mode=instructor.Mode.JSON
+        )
+        
 
     def send_message_click(e):
         # Send a non-empty message to the chat
@@ -94,32 +121,38 @@ def chat_page(page: ft.Page, room_id: str):
                     room_id=room_id
                 )
             )
-
-            if rooms[room_id]['has_ai']:
-                # TODO: replace with AI response logic
-                ai_response = "I am not an AI"
-                page.pubsub.send_all(
-                    Message(
-                        user_id=page.session.get('user_id'),
-                        user_name="AI",
-                        text=ai_response,
-                        message_type="chat_message",
-                        room_id=room_id
-                    )
-                )
-
             # Clear the message field and focus on it
             new_message.value = ""
             new_message.focus()
             page.update()
-
-    def on_message(message: Message):
+    
+    async def on_message(message: Message):
+        global ai_thread
         if isinstance(message, Message) and message.room_id == room_id:
-            if message.message_type == "chat_message":
+            if (
+                message.message_type == "chat_message" or
+                message.message_type == "ai_message"
+            ):
                 m = ChatMessage(message)
+                ai_context.messages.append(
+                    AIChatMessage(
+                        id=uuid.uuid4(),
+                        created_at=datetime.datetime.now(),
+                        username=message.user_name if message.message_type == "chat_message" else "AI",
+                        message=message.text
+                    )
+                )
                 chat.controls.append(m)
             elif message.message_type == "login_message":
                 m = ft.Text(message.text, italic=True, color=ft.colors.BLACK45, size=12)
+                ai_context.messages.append(
+                    AIChatMessage(
+                        id=uuid.uuid4(),
+                        created_at=datetime.datetime.now(),
+                        username="System",
+                        message=m.value
+                    )
+                )
                 chat.controls.append(m)
             elif message.message_type == "human_claim_message":
                 return_to_start_click()
@@ -128,8 +161,56 @@ def chat_page(page: ft.Page, room_id: str):
                 chat.controls.append(m)
                 ai_claim_timer.visible = True
                 ai_claim_timer.start()
-            
+                ai_context.messages.append(
+                    AIChatMessage(
+                        id=uuid.uuid4(),
+                        created_at=datetime.datetime.now(),
+                        username="System",
+                        message=m.value
+                    )
+                )
             page.update()
+            last_msg: AIChatMessage = ai_context.messages[-2] if len(ai_context.messages) >= 2 else ai_context.messages[-1]
+            print(len(ai_context.messages))
+            if (
+                rooms[room_id]['has_ai'] and
+                not message.message_type == "ai_message" and
+                (
+                    True or #datetime.datetime.now() - last_msg.created_at > datetime.timedelta(milliseconds=2000) or
+                    len(ai_context.messages) == 1
+                )
+            ):
+                response: AIChatResponse = await perform_openai_request(
+                    client=oai_client,
+                    chat=ai_context
+                )
+                print("RESPONSE")
+                print(response)   
+                # Check if the thread is already running
+                if ai_thread is not None:
+                    if ai_thread.is_alive():
+                        # If it is, we need to stop it
+                        ai_thread.cancel()  # Only works if the thread is a Timer and hasn't started yet
+                        # ai_thread.join()  # Ensure the thread has finished running
+                # send response after certain amount of time
+                ai_thread = threading.Timer(
+                    len(response.message)/9,
+                    ai_response,
+                    args=(response,)
+                )
+                ai_thread.start()
+                
+    def ai_response(response):
+        if response.is_response_required:
+            page.pubsub.send_all(
+                Message(
+                    user_id=page.session.get('user_id'),
+                    user_name=ai_name,
+                    text=response.message,
+                    message_type="ai_message",
+                    room_id=room_id
+                )
+            )
 
     def on_ai_claim(e):
         page.pubsub.send_all(

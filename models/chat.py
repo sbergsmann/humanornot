@@ -6,7 +6,7 @@ from openai import BaseModel
 from pydantic import Field
 
 
-class ChatMessage(BaseModel):
+class AIChatMessage(BaseModel):
     id: UUID
     created_at: datetime
     username: str
@@ -24,7 +24,7 @@ class Chat(BaseModel):
     system_prompt: str
     # add more metadata ...
     
-    messages: List[ChatMessage]
+    messages: List[AIChatMessage]
 
     def format(self, last_n_messages: None | int = None):
         if last_n_messages is None:

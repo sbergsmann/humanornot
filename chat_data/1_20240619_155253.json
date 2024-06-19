@@ -1,0 +1,2 @@
+{"messages": [{"timestamp": "2024-06-19 15:52:48", "user_id": "99f34ea1-a08c-4e10-9bff-13b0cfb463af", "user_name": "tim", "text": "hey"}, 
+{"timestamp": "2024-06-19 15:52:52", "user_id": "GPT3.5", "user_name": "Monika", "text": "Hey, how's it going?"}, {"timestamp": "2024-06-19 15:52:53", "user_id": "99f34ea1-a08c-4e10-9bff-13b0cfb463af", "user_name": "tim", "message_type": "human_claim_message"}], "active_ai_claims": []}

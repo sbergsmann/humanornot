@@ -1,5 +1,5 @@
 def append_message(room_id, message, chat_sessions):
-    if message.message_type == 'chat_message':
+    if message.message_type == 'chat_message' or message.message_type == 'ai_message':
         chat_sessions[room_id]['chat_messages'].append({
             'timestamp': message.message_timestamp,
             'user_id': message.user_id,

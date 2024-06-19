@@ -109,7 +109,7 @@ def chat_page(page: ft.Page, room_id: str):
                 ai_response = "I am not an AI"
                 page.pubsub.send_all(
                     Message(
-                        user_id=page.session.get('user_id'),
+                        user_id="GPT-3.5", # in the future this could be dynamically changed to the AI model name
                         user_name="AI",
                         text=ai_response,
                         message_type="chat_message",
@@ -282,6 +282,9 @@ def start_page(page: ft.Page):
         if not join_user_name.value:
             join_user_name.error_text = "Name cannot be blank!"
             join_user_name.update()
+        elif len(online_users) < 2:
+            join_user_name.error_text = "At least 2 users must be online to start a chat."
+            join_user_name.update()
         else:
             user_name = join_user_name.value
             user_id = page.session.get("user_id")
@@ -297,30 +300,6 @@ def start_page(page: ft.Page):
             if len(waiting_list) >= 2:
                 # add assign_user function below
                 assign_user(page, Message, rooms, waiting_list, user_id_to_name)
-                # user1_id, user1_name = waiting_list.popleft()
-                # user2_id, user2_name = waiting_list.popleft()
-                # room_id = str(len(rooms) + 1)
-                # rooms[room_id] = [user1_name, user2_name]
-                # page.session.set("room_id", room_id)
-                # # Notify both users to join the chat room
-                # page.pubsub.send_all(
-                #     Message(
-                #         user_id=user1_id,
-                #         user_name=user1_name,
-                #         text=f"{user1_name} and {user2_name}, you have been paired.",
-                #         message_type="join_chat",
-                #         room_id=room_id
-                #     )
-                # )
-                # page.pubsub.send_all(
-                #     Message(
-                #         user_id=user2_id,
-                #         user_name=user2_name,
-                #         text=f"{user1_name} and {user2_name}, you have been paired.",
-                #         message_type="join_chat",
-                #         room_id=room_id
-                #     )
-                # )
 
     # User name entry field
     join_user_name = ft.TextField(

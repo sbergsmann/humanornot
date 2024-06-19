@@ -1,8 +1,11 @@
 import flet as ft
 from collections import deque, defaultdict
+from datetime import datetime
 import uuid
 from services.timer import Timer
 from services.assignuser import assign_user
+from services.chatend import store_chat
+from services.message import append_message
 
 # Define a message class to send messages between users
 class Message:
@@ -19,6 +22,8 @@ class Message:
         self.message_type = message_type
         self.room_id = room_id
         self.user_count = user_count # to display the number of users online
+        self.message_id = str(uuid.uuid4())
+        self.message_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Define a chat message class to display messages in the chat
 class ChatMessage(ft.Row):
@@ -70,8 +75,12 @@ rooms = defaultdict(lambda: {'users': [], 'has_ai': False})
 waiting_list = deque()
 online_users = set()  # To track online users
 user_id_to_name = {}
-chat_sessions = defaultdict(lambda: {'messages': []})
-chat_end_flags = defaultdict(bool)
+chat_sessions = defaultdict(lambda: {'chat_messages': [],
+                                     'ai_claim_messages':[],
+                                     'human_claim_messages':[],
+                                     'active_ai_claims':set(),
+                                     'is_stored': False})
+processed_messages = set()
 
 def update_online_users(page):
     if hasattr(page, 'users_online_text') and page.route == "/":
@@ -115,6 +124,11 @@ def chat_page(page: ft.Page, room_id: str):
 
     def on_message(message: Message):
         if isinstance(message, Message) and message.room_id == room_id:
+            # actively store chat data in chat_sessions dictionary
+            if message.message_id not in processed_messages:
+                processed_messages.add(message.message_id)
+                append_message(room_id, message, chat_sessions)
+
             if message.message_type == "chat_message":
                 m = ChatMessage(message)
                 chat.controls.append(m)
@@ -128,6 +142,8 @@ def chat_page(page: ft.Page, room_id: str):
                 chat.controls.append(m)
                 ai_claim_timer.visible = True
                 ai_claim_timer.start()
+            elif message.message_type == "end_chat":
+                return_to_start_click()
             
             page.update()
 
@@ -195,12 +211,16 @@ def chat_page(page: ft.Page, room_id: str):
         page.update()
 
     def end_game_after_ai_countdown_ends():
+        if not chat_sessions[room_id]['is_stored']:
+            chat_sessions[room_id]['is_stored'] = True
+            store_chat(room_id, chat_sessions)
+        # TODO: ask Severin if this served another purpose
         page.pubsub.send_all(
             Message(
                 user_id=page.session.get("user_id"),
                 user_name=page.session.get("user_name"),
                 text="",
-                message_type="human_claim_message",
+                message_type="end_chat",
                 room_id=room_id
             )
         )

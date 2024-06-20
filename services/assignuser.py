@@ -4,7 +4,7 @@ def assign_user(page, Message, rooms, waiting_list, user_id_to_name):
     """Assign a human user to a room with another human user or an AI user.
     Assumes that there are already 2 users in the waiting list."""
     # add user to waiting list
-    if random.choice([True, True]): # 50/50 chance
+    if random.choice([True, False]): # 50/50 chance
         # assign to AI
         user_id, user_name = waiting_list.popleft()
         user_id_to_name[user_id] = user_name

@@ -92,6 +92,7 @@ chat_sessions = defaultdict(lambda: {'chat_messages': [],
                                      'ai_claim_messages':[],
                                      'human_claim_messages':[],
                                      'active_ai_claims':set(),
+                                     'active_human_claim':set(),
                                      'is_stored': False})
 processed_messages = set()
 
@@ -299,7 +300,7 @@ def chat_page(page: ft.Page, room_id: str):
     def end_game_after_ai_countdown_ends():
         if not chat_sessions[room_id]['is_stored']:
             chat_sessions[room_id]['is_stored'] = True
-            store_chat(room_id, chat_sessions)
+            store_chat(room_id, chat_sessions, rooms)
         # TODO: ask Severin if this served another purpose
         page.pubsub.send_all(
             Message(

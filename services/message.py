@@ -15,7 +15,8 @@ def append_message(room_id, message, chat_sessions):
         })
         # remove the user_id from the active_ai_claims set
         # using discard wont raise an error if the user_id is not in the set
-        chat_sessions[room_id]['active_ai_claims'].discard(message.user_id) 
+        chat_sessions[room_id]['active_ai_claims'].discard(message.user_id)
+        chat_sessions[room_id]['active_human_claim'].add(message.user_id)
     
     elif message.message_type == 'ai_claim_message':
         chat_sessions[room_id]['ai_claim_messages'].append({

@@ -1,9 +1,9 @@
 {
     "results": {
-        "correctly_identified_AI": 0,
+        "correctly_identified_AI": 2,
         "incorrectly_identified_AI": 2,
-        "correctly_identified_human": 2,
+        "correctly_identified_human": 3,
         "incorrectly_identified_human": 0,
-        "total_games": 5
+        "total_games": 8
     }
 }

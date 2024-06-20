@@ -2,41 +2,35 @@
 
 ## Install Environment
 
+either with poetry or the given `requirements.txt` file
+
+### Poetry
 - install [Poetry](https://python-poetry.org/docs/#installation)
-- If you need a `requirements.txt` file, run
-```shell
-poetry export --without-hashes --without dev -f requirements.txt -o requirements.txt
-```
 - **Tip:** Make sure that your environment is install in the local folder for better overview by running
 ```shell
 poetry config virtualenvs.in-project true
 ```
-
 - run `poetry install` in the cloned folder
 
-## Running the Chat Interface
+### Pip
+- make a new environment and run `pip install -r requirements.txt`
+
+## Running HumanOrNot
 
 ```shell
 flet run --web services/chat_page.py
 ```
 
-# Workflow
+### Endpoints
+the most easy way is to register on [OpenAI](https://platform.openai.com/) and create an API key.
 
-## Sprint 1
-Deadline 4. June 2024
-- Basic chat mechanism (UC1, UC2, SUC1)
-- AI callback method (SUC2)
-- AI Endpoint check (SUC5)
+### Example Endpoint Config for OpenAI:
+- endpoint_base_url: https://api.openai.com/v1
+- model_name: "gpt-3.5-turbo-0125"
+- your api key from the OpenAI API
 
-Temporary:
-- "Back to Start Screen Button" for debugging purposes
+Add the enpoint using the interface. The Api-key handling and save storage is all handled automatically.
 
-Optional:
-- Implement collecting and storing of chat messages
+### Simulate multiple users
 
-## Sprint 2
-Deadline 11. June 2024
-- Prompt Engineering for AI
-- Waiting List for Users
-- Show System Message when Claim was made
-- Store current Claim Situation in the Chat model
+When running the shell command above, a browser window should pop up. To simulate multiple users, you can easily just duplicate the browser window with the same url and port (see video).

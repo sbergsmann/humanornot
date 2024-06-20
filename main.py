@@ -409,8 +409,8 @@ def start_page(page: ft.Page):
 
     ### ENDPOINT
     
-    def close_banner(e):
-        page.close_banner(banner)
+    def close_endpoint_banner(e):
+        page.close_banner()
         page.add(ft.Text("Action clicked: " + e.control.text))
 
     action_button_style = ft.ButtonStyle(color=ft.colors.BLUE)
@@ -422,9 +422,9 @@ def start_page(page: ft.Page):
             color=ft.colors.BLACK,
         ),
         actions=[
-            ft.TextButton(text="Retry", style=action_button_style, on_click=close_banner),
-            ft.TextButton(text="Ignore", style=action_button_style, on_click=close_banner),
-            ft.TextButton(text="Cancel", style=action_button_style, on_click=close_banner),
+            ft.TextButton(text="Retry", style=action_button_style, on_click=close_endpoint_banner),
+            ft.TextButton(text="Ignore", style=action_button_style, on_click=close_endpoint_banner),
+            ft.TextButton(text="Cancel", style=action_button_style, on_click=close_endpoint_banner),
         ],
     )
 

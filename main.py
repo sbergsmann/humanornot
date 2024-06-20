@@ -7,6 +7,7 @@ import flet as ft
 from collections import deque, defaultdict
 import datetime
 import uuid
+import json
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -19,6 +20,9 @@ from services.timer import Timer
 from services.assignuser import assign_user
 from services.chatend import store_chat
 from services.message import append_message
+from services.results import update_results_display
+
+RESULTS_JSON = "results/results.json"
 
 # Define a message class to send messages between users
 class Message:
@@ -364,6 +368,8 @@ def chat_page(page: ft.Page, room_id: str):
 def start_page(page: ft.Page):
     page.title = "HumanOrNot"
 
+    results_label = ft.Text("", size=16, weight="bold")
+
     def join_chat_click(e):
         # User name is required to join the chat
         if not join_user_name.value:
@@ -415,12 +421,15 @@ def start_page(page: ft.Page):
                 ft.Text("Welcome to HumanOrNot!", size=20, weight="bold"),
                 join_user_name,
                 join_chat_button,
-                page.users_online_text
+                page.users_online_text,
+                results_label
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
     )
+    update_results_display(results_label)
+    
 
 def main(page: ft.Page):
     def route_change(e):

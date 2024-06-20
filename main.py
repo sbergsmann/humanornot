@@ -106,6 +106,7 @@ def update_online_users(page):
         page.users_online_text.update()
 
 ai_thread = None
+
 def chat_page(page: ft.Page, room_id: str):
     global ai_thread
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
@@ -305,7 +306,6 @@ def chat_page(page: ft.Page, room_id: str):
         if not chat_sessions[room_id]['is_stored']:
             chat_sessions[room_id]['is_stored'] = True
             store_chat(room_id, chat_sessions, rooms)
-        # TODO: ask Severin if this served another purpose
         page.pubsub.send_all(
             Message(
                 user_id=page.session.get("user_id"),

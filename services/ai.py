@@ -16,12 +16,13 @@ from models.chat import AIChatResponse, Chat
 
 async def perform_openai_request(
     client: AsyncOpenAI,
+    model_name: str,
     chat: Chat
 ) -> AIChatResponse:
     """"""
     
     response: AIChatResponse = await client.chat.completions.create(
-        model="gpt-3.5-turbo-0125",
+        model=model_name,
         messages=[
             {
                 "role": "system",

@@ -1,4 +1,6 @@
+import asyncio
 import datetime
+import os
 import random
 from threading import Thread
 import threading
@@ -9,10 +11,12 @@ import datetime
 import uuid
 import json
 from dotenv import load_dotenv
+
+from services.endpointfactory import EndpointFactory
 load_dotenv()
 
 import instructor
-from openai import AsyncClient
+from openai import AsyncClient, AsyncOpenAI
 from models.chat import AIChatResponse, Chat, AIChatMessage
 from services.ai import perform_openai_request
 from services.prompt import generate_system_prompt
@@ -99,6 +103,7 @@ chat_sessions = defaultdict(lambda: {'chat_messages': [],
                                      'active_human_claim':set(),
                                      'is_stored': False})
 processed_messages = set()
+endpoint_factory = EndpointFactory("data")
 
 def update_online_users(page):
     if hasattr(page, 'users_online_text') and page.route == "/":
@@ -119,8 +124,15 @@ def chat_page(page: ft.Page, room_id: str):
         messages=[]
     )
     if rooms[room_id]['has_ai']:
-        oai_client: AsyncClient = instructor.patch(
-            AsyncClient(),
+        endpoint_key: str = random.choice(list(endpoint_factory.endpoint_config.keys()))
+        model_name: str = endpoint_factory.endpoint_config[endpoint_key]["model_name"]
+        api_key_id: str = endpoint_factory.endpoint_config[endpoint_key]["api_key_id"]
+        base_url: str = endpoint_factory.endpoint_config[endpoint_key]["base_url"]
+        oai_client: AsyncOpenAI = instructor.patch(
+            AsyncOpenAI(
+                api_key=os.environ.get(api_key_id),
+                base_url=base_url
+            ),
             mode=instructor.Mode.JSON
         )
         
@@ -208,6 +220,7 @@ def chat_page(page: ft.Page, room_id: str):
                 print("PERFORMING AI REQUEST")
                 response: AIChatResponse = await perform_openai_request(
                     client=oai_client,
+                    model_name=model_name,
                     chat=ai_context
                 )
                 print("RESPONSE")
@@ -394,6 +407,70 @@ def start_page(page: ft.Page):
                 # add assign_user function below
                 assign_user(page, Message, rooms, waiting_list, user_id_to_name)
 
+    ### ENDPOINT
+    
+    def close_banner(e):
+        page.close_banner(banner)
+        page.add(ft.Text("Action clicked: " + e.control.text))
+
+    action_button_style = ft.ButtonStyle(color=ft.colors.BLUE)
+    banner = ft.Banner(
+        bgcolor=ft.colors.AMBER_100,
+        leading=ft.Icon(ft.icons.WARNING_AMBER_ROUNDED, color=ft.colors.AMBER, size=40),
+        content=ft.Text(
+            value="Your endpoint does not meet the necessary requirements for the game.",
+            color=ft.colors.BLACK,
+        ),
+        actions=[
+            ft.TextButton(text="Retry", style=action_button_style, on_click=close_banner),
+            ft.TextButton(text="Ignore", style=action_button_style, on_click=close_banner),
+            ft.TextButton(text="Cancel", style=action_button_style, on_click=close_banner),
+        ],
+    )
+
+    async def check_endpoint(e):
+        if not api_endpoint_name.value:
+            api_endpoint_name.error_text = "You must provide your exact model name for the OpenAI class."
+            api_endpoint_name.update()
+        elif not api_endpoint_url.value:
+            api_endpoint_url.error_text = "Please enter a public accessible url for your endpoint"
+            api_endpoint_url.update()
+        elif not api_endpoint_key.value:
+            api_endpoint_key.error_text = "Plase enter an API key"
+            api_endpoint_key.update()
+        else:
+            is_success: bool = await endpoint_factory.validate_endpoint(
+                endpoint_base_url=api_endpoint_url.value,
+                api_key=api_endpoint_key.value,
+                model_name=api_endpoint_name.value
+            )
+            if is_success is False:
+                banner.content.value = "Your endpoint does not meet the necessary requirements for the game."
+                banner.bgcolor = ft.colors.AMBER_100
+                page.show_banner(banner)
+            else:
+                banner.content.value = "Endpoint added."
+                banner.bgcolor = ft.colors.GREEN_100
+                page.show_banner(banner)
+                
+
+
+    api_endpoint_name: str = ft.TextField(label="Enter the model name", text_align=ft.TextAlign.CENTER)
+    api_endpoint_url: str = ft.TextField(label="Enter the api endpoint", text_align=ft.TextAlign.CENTER)
+    api_endpoint_key: str = ft.TextField(label="Enter the api key", text_align=ft.TextAlign.CENTER, password=True)
+    api_endpoint_ui = ft.Column(
+        controls=[
+            ft.Text("Add an API Endpoint", size=20, weight="bold"),
+            api_endpoint_name,
+            api_endpoint_url,
+            api_endpoint_key,
+            ft.ElevatedButton(text="Submit Endpoint", on_click=check_endpoint)
+        ],
+        alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        width=500
+    )
+
     # User name entry field
     join_user_name = ft.TextField(
         label="Enter your name to join the chat",
@@ -422,7 +499,8 @@ def start_page(page: ft.Page):
                 join_user_name,
                 join_chat_button,
                 page.users_online_text,
-                results_label
+                results_label,
+                api_endpoint_ui
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,

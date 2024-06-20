@@ -20,7 +20,7 @@ poetry config virtualenvs.in-project true
 ## Running HumanOrNot
 
 ```shell
-flet run --web services/chat_page.py
+flet run --web .\main.py
 ```
 
 ### Endpoints

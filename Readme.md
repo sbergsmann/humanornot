@@ -1,5 +1,7 @@
 # Human or Not
 
+[Video Link](https://drive.google.com/file/d/1-4VbuQw8aGQjahIwJrtBQHgPW7zBGmJr/view?usp=sharing)
+
 ## Install Environment
 
 either with poetry or the given `requirements.txt` file
